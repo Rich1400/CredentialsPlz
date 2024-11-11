@@ -188,9 +188,6 @@ $WiFiPasswords
 # Debug: Output Full System Info to Console
 Write-Host "Full System Info:" $SystemInfo
 
-# Send System Info to Discord
-Send-ToDiscord -Message $SystemInfo
-
 ###########################################################################################################################################################
 
 # Get HDDs
