@@ -400,38 +400,23 @@ vault -ErrorAction SilentlyContinue -Force
 function Send-SplitToDiscord {
     param ($Message)
 
-    # Maximum length for Discord message (leaving some room for formatting)
+    # Set the maximum message length (Discord limit is 2000 characters, so we'll use 1900 for safety)
     $maxLength = 1900
 
-    # If the message is longer than the max length, split it
-    if ($Message.Length -gt $maxLength) {
-        $chunks = @()  # Initialize an array to hold the message chunks
-        $currentChunk = ""
+    # While the message length exceeds the max length, send it in chunks
+    while ($Message.Length -gt $maxLength) {
+        # Extract the first chunk of the message
+        $chunk = $Message.Substring(0, $maxLength)
 
-        # Split the message into lines
-        $lines = $Message -split "`n"
+        # Send the chunk to Discord
+        Send-ToDiscord -Message $chunk
 
-        foreach ($line in $lines) {
-            # If adding the line would exceed the max length, add the current chunk to the array and start a new chunk
-            if (($currentChunk.Length + $line.Length) -gt $maxLength) {
-                $chunks += $currentChunk.Trim()
-                $currentChunk = ""
-            }
-            # Add the line to the current chunk
-            $currentChunk += $line + "`n"
-        }
+        # Remove the sent chunk from the original message
+        $Message = $Message.Substring($maxLength)
+    }
 
-        # Add the final chunk if it contains any text
-        if ($currentChunk.Trim() -ne "") {
-            $chunks += $currentChunk.Trim()
-        }
-
-        # Send each chunk to Discord
-        foreach ($chunk in $chunks) {
-            Send-ToDiscord -Message $chunk
-        }
-    } else {
-        # If the message is within the limit, send it directly
+    # Send any remaining part of the message
+    if ($Message.Length -gt 0) {
         Send-ToDiscord -Message $Message
     }
 }
