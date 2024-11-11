@@ -87,13 +87,13 @@ function Get-WifiPasswords {
 
             # Return the profile name and password if found
             if ($keyContent) {
-                "{0}: {1}" -f $profile, ($keyContent -replace 'Key Content\s*:\s*', '')
+                "{0}: {1}" -f ${profile}, ($keyContent -replace 'Key Content\s*:\s*', '')
             } else {
-                "{0}: No password found or access denied" -f $profile
+                "{0}: No password found or access denied" -f ${profile}
             }
         }
 
-        return $profiles -join "`n"
+        return ${profiles} -join "`n"
     } catch {
         return "No Wi-Fi profiles found or access denied."
     }
