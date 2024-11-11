@@ -407,7 +407,11 @@ function Send-ToDiscord {
     Write-Host "Send-ToDiscord called with message length: $($Message.Length)"
     Write-Host "Message content (first 100 characters): $($Message.Substring(0, [Math]::Min(100, $Message.Length)))"
 
-    $payload = '{"content": "```' + $Message + '```"}'
+    # Escape special characters in the message for JSON compatibility
+    $escapedMessage = $Message -replace '\\', '\\\\' -replace '"', '\"' -replace '\n', '\\n' -replace '\r', ''
+
+    # Construct the JSON payload
+    $payload = @{ content = "```$escapedMessage```" } | ConvertTo-Json
 
     try {
         Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType "application/json" -Body $payload
