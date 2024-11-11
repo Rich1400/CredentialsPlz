@@ -81,7 +81,7 @@ function Get-WifiPasswords {
                 try {
                     $keyContent = netsh wlan show profile "$profile" key=clear | Select-String "Key Content"
                 } catch {
-                    Write-Error "Failed to retrieve Wi-Fi password for $profile"
+                    Write-Error "Failed to retrieve Wi-Fi password for ${profile}"
                     break
                 }
             }
@@ -90,7 +90,7 @@ function Get-WifiPasswords {
             if ($keyContent) {
                 "${profile}: $($keyContent -replace 'Key Content\s*:\s*', '')"
             } else {
-                "$profile: No password found or access denied"
+                "${profile}: No password found or access denied"
             }
         }
 
@@ -99,6 +99,7 @@ function Get-WifiPasswords {
         return "No Wi-Fi profiles found or access denied."
     }
 }
+
 
 ############################################################################################################################################################
 
