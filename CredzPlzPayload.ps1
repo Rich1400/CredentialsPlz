@@ -422,7 +422,7 @@ function Send-ToDiscord {
     param ($Message)
 
     # Debug: Output the message length to the console
-    Write-Host "Sending message to Discord. Length: $($Message.Length)"
+    Write-Host "Sending a message to Discord. Length: $($Message.Length)"
 
     # Escape special characters in the message for JSON compatibility
     $escapedMessage = $Message -replace '\\', '\\\\' -replace '"', '\"' -replace '\n', '\\n' -replace '\r', ''
