@@ -164,11 +164,11 @@ Write-Host "Building System Details..."
 
 # Get System Info
 try {
-    $computerSystem = Get-CimInstance CIM_ComputerSystem
-    $computerOS = Get-CimInstance Win32_OperatingSystem
-    $computerCPU = Get-CimInstance Win32_Processor
-    $computerBIOS = Get-CimInstance Win32_BIOS
-    $computerRAM = Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum
+    $computerSystem = Get-WmiObject -Class Win32_ComputerSystem
+    $computerOS = Get-WmiObject -Class Win32_OperatingSystem
+    $computerCPU = Get-WmiObject -Class Win32_Processor
+    $computerBIOS = Get-WmiObject -Class Win32_BIOS
+    $computerRAM = (Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum
 
     $SystemDetails = @"
 System Manufacturer: $($computerSystem.Manufacturer)
@@ -180,11 +180,12 @@ OS Serial Number: $($computerOS.SerialNumber)
 Install Date: $([Management.ManagementDateTimeConverter]::ToDateTime($computerOS.InstallDate))
 Last Boot Time: $([Management.ManagementDateTimeConverter]::ToDateTime($computerOS.LastBootUpTime))
 CPU: $($computerCPU.Name)
-RAM Capacity: $([Math]::Round($computerRAM.Sum / 1GB, 2)) GB
+RAM Capacity: $([Math]::Round($computerRAM / 1GB, 2)) GB
 "@
 } catch {
-    $SystemDetails = "Failed to retrieve system details."
+    $SystemDetails = "Error: Unable to retrieve system details. Exception: $($_.Exception.Message)"
 }
+
  
 # Main Script: Construct Full System Information
 $SystemInfo = @"
