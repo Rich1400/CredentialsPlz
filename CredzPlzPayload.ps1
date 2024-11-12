@@ -73,7 +73,8 @@ function Get-WifiPasswords {
 # Get info about pc
 # Retrieve local IP addresses using Get-CimInstance
 try {
-    $computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
+    #$computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
+    $localIP = (ipconfig | Select-String -Pattern "IPv4").Line -split ":\s*" | Select-Object -Last 1
     if ($computerIPs) {
         $localIP = $computerIPs -join ", "
     } else {
@@ -97,13 +98,15 @@ try {
         $IsDHCPEnabled = $true
     }
     # Retrieve the MAC address
-    $MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
+    #$MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
+    $MAC = (getmac | Select-String -Pattern "Physical").Line -split "\s+" | Select-Object -First 1
 } catch {
     $MAC = "Error getting MAC address"
 }
 # Retrieve Network Info
 try {
-    $computerPubIP = (Invoke-WebRequest ipinfo.io/ip -UseBasicParsing).Content.Trim()
+    #$computerPubIP = (Invoke-WebRequest ipinfo.io/ip -UseBasicParsing).Content.Trim()
+    $computerPubIP = curl ipinfo.io/ip
     $computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
     $localIP = $computerIPs -join ", "
     $MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
@@ -130,7 +133,8 @@ Write-Host "Building System Details..."
 # Get System Info
 try {
     $computerSystem = Get-WmiObject -Class Win32_ComputerSystem
-    $computerOS = Get-WmiObject -Class Win32_OperatingSystem
+    #$computerOS = Get-WmiObject -Class Win32_OperatingSystem
+    $osInfo = [System.Environment]::OSVersion.VersionString
     $computerCPU = Get-WmiObject -Class Win32_Processor
     $computerBIOS = Get-WmiObject -Class Win32_BIOS
     $computerRAM = (Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum
