@@ -128,8 +128,31 @@ try {
 # Get System Information: Print System Details to Console
 Write-Host "Building System Details..."
 
+# System Info Retrieval
+$hostname = (Get-ComputerInfo).CsName
+$os = (Get-ComputerInfo).OsName
+$osVersion = (Get-ComputerInfo).WindowsVersion
+$cpu = (Get-CimInstance -ClassName Win32_Processor).Name
+$ram = [math]::round((Get-CimInstance -ClassName Win32_ComputerSystem).TotalPhysicalMemory / 1GB, 2)
+$bios = (Get-CimInstance -ClassName Win32_BIOS).SMBIOSBIOSVersion
+$ipAddress = Get-NetIPAddress | Where-Object { $_.AddressFamily -eq 'IPv4' -and $_.InterfaceAlias -notlike '*Loopback*' } | Select-Object -ExpandProperty IPAddress
+
+# Format System Info Output
+$systemInfo = @"
+Hostname: $hostname
+OS: $os
+OS Version: $osVersion
+CPU: $cpu
+RAM: $ram GB
+BIOS Version: $bios
+IP Address: $ipAddress
+"@
+
+# Output or Send via Discord Webhook
+Write-Output $systemInfo
+
 # Get System Info
-try {
+<#try {
     $computerSystem = Get-WmiObject -Class Win32_ComputerSystem
     #$computerOS = Get-WmiObject -Class Win32_OperatingSystem
     $osInfo = [System.Environment]::OSVersion.VersionString
@@ -170,7 +193,10 @@ $ConnectionsInfo
 "@
 # Debug: Output Full System Info to Console
 Write-Host "Full System Info:" $SystemInfo
+#>
+
 ##########################
+
 # Get HDDs
 $driveType = @{
    2="Removable disk "
