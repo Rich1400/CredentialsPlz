@@ -71,8 +71,8 @@ function Get-WifiPasswords {
 ##########################
 # Get info about PC: local IP addresses using Get-CimInstance
 try {
-    #$computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
-    $localIP = (ipconfig | Select-String -Pattern "IPv4").Line -split ":\s*" | Select-Object -Last 1
+    $computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
+    #$localIP = (ipconfig | Select-String -Pattern "IPv4").Line -split ":\s*" | Select-Object -Last 1
     if ($computerIPs) {
         $localIP = $computerIPs -join ", "
     } else {
@@ -96,8 +96,8 @@ try {
         $IsDHCPEnabled = $true
     }
     # Retrieve the MAC address
-    #$MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
-    $MAC = (getmac | Select-String -Pattern "Physical").Line -split "\s+" | Select-Object -First 1
+    $MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
+    #$MAC = (getmac | Select-String -Pattern "Physical").Line -split "\s+" | Select-Object -First 1
 } catch {
     $MAC = "Error getting MAC address"
 }
@@ -105,6 +105,7 @@ try {
 try {
     #$computerPubIP = (Invoke-WebRequest ipinfo.io/ip -UseBasicParsing).Content.Trim()
     $computerPubIP = curl ipinfo.io/ip
+    #testing this ^^
     $computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
     $localIP = $computerIPs -join ", "
     $MAC = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1 -ExpandProperty MacAddress
